@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/Ace0314/Chirpy/internal/auth"
 	"github.com/Ace0314/Chirpy/internal/database"
 )
 
@@ -16,9 +17,19 @@ func (cfg *apiConfig) handlerWebhook(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	apiKey, err := auth.GetAPIKey(r.Header)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Couldn't find api kay")
+		return
+	}
+	if apiKey != cfg.polkaKey {
+		respondWithError(w, http.StatusUnauthorized, "API key is invalid")
+		return
+	}
+
 	decoder := json.NewDecoder(r.Body)
 	params := parameters{}
-	err := decoder.Decode(&params)
+	err = decoder.Decode(&params)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't decode parameters")
 		return
